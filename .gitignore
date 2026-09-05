@@ -1,4 +1,11 @@
 node_modules/
 .env
-data/
 logs/
+
+# Dados: jogos-hoje.json e historico.json SÃO commitados (o site na Vercel lê do repo).
+# rate-limit e api-keys são locais/transientes.
+data/*
+!data/jogos-hoje.json
+!data/historico.json
+!data/sinais-hoje.json
+!data/estrategias-estado.json

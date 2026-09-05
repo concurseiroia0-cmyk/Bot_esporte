@@ -1,0 +1,65 @@
+name: Robos Farejador
+
+on:
+  schedule:
+    # ROBO 1 — Mapeamento 08h BRT (11h UTC)
+    - cron: '0 11 * * *'
+    # ROBO 2 — Scanner a cada 2 min entre 10h e 23h BRT (13h-02h UTC)
+    - cron: '*/2 13-23 * * *'
+    - cron: '0-59/2 0-2 * * *'
+    # ROBO 3 — Pre-validacao 23h30 BRT (02h30 UTC) + validacao 03h BRT (06h UTC)
+    - cron: '30 2 * * *'
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    inputs:
+      robo:
+        description: 'Qual robô rodar'
+        required: true
+        default: 'scanner'
+        type: choice
+        options:
+          - mapeamento
+          - scanner
+          - validacao
+
+permissions:
+  contents: write
+
+concurrency:
+  group: robos
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci --no-audit --no-fund
+
+      - name: Rodar robô
+        env:
+          API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
+          API_FOOTBALL_KEY_2: ${{ secrets.API_FOOTBALL_KEY_2 }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TEST_MODE: 'false'
+          MAX_REQ_PER_MIN: '10'
+        run: node robos/run-one.js "${{ github.event.inputs.robo || 'scanner' }}"
+
+      - name: Commit e push dos dados
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/jogos-hoje.json data/sinais-hoje.json data/historico.json data/estrategias-estado.json 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "Nada para commitar"
+          else
+            git commit -m "dados: ${{ github.event.inputs.robo || 'scanner' }} $(date -u +%Y-%m-%d_%H:%M UTC)"
+            git push
+          fi
