@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚽ Farejador de Pressão — Dashboard</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        background: linear-gradient(135deg, #0a0e17 0%, #101828 100%);
+        color: #e2e8f0; min-height: 100vh; padding: 24px;
+    }
+    h1 { font-size: 1.5rem; margin-bottom: 4px; }
+    .sub { color: #94a3b8; font-size: .85rem; margin-bottom: 20px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px; }
+    .card {
+        background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
+        border-radius: 12px; padding: 16px;
+    }
+    .card .num { font-size: 1.8rem; font-weight: 700; }
+    .card .lbl { font-size: .75rem; color: #94a3b8; text-transform: uppercase; letter-spacing: .05em; }
+    .green { color: #4ade80; } .red { color: #f87171; } .amber { color: #fbbf24; }
+    h2 { font-size: 1rem; margin: 24px 0 12px; color: #cbd5e1; }
+    table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+    th { text-align: left; color: #94a3b8; font-weight: 600; padding: 8px; border-bottom: 1px solid rgba(255,255,255,.1); }
+    td { padding: 8px; border-bottom: 1px solid rgba(255,255,255,.05); }
+    tr:hover td { background: rgba(255,255,255,.03); }
+    .tag { padding: 2px 8px; border-radius: 99px; font-size: .7rem; font-weight: 700; }
+    .tag.G { background: rgba(74,222,128,.15); color: #4ade80; }
+    .tag.R { background: rgba(248,113,113,.15); color: #f87171; }
+    .tag.P { background: rgba(251,191,36,.15); color: #fbbf24; }
+    .tag.off { background: rgba(248,113,113,.1); color: #f87171; margin-left: 6px; }
+    .pill { display: inline-block; background: rgba(255,255,255,.06); border-radius: 8px; padding: 2px 8px; font-size: .75rem; margin: 1px; }
+    #refresh { position: fixed; bottom: 20px; right: 20px; background: #3b82f6; color: white; border: none;
+        border-radius: 99px; padding: 12px 20px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 14px rgba(59,130,246,.4); }
+    .live { display: inline-block; width: 8px; height: 8px; background: #4ade80; border-radius: 50%; margin-right: 6px;
+        animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+</style>
+</head>
+<body>
+    <h1><span class="live"></span>Farejador de Pressão</h1>
+    <div class="sub" id="atualizado">carregando...</div>
+
+    <div class="grid">
+        <div class="card"><div class="num" id="s-total">—</div><div class="lbl">Sinais</div></div>
+        <div class="card"><div class="num green" id="s-green">—</div><div class="lbl">Green</div></div>
+        <div class="card"><div class="num red" id="s-red">—</div><div class="lbl">Red</div></div>
+        <div class="card"><div class="num amber" id="s-pend">—</div><div class="lbl">Pendentes</div></div>
+        <div class="card"><div class="num" id="s-taxa">—</div><div class="lbl">Aproveitamento</div></div>
+    </div>
+
+    <h2>📊 Por estratégia</h2>
+    <div class="card"><table id="t-estr">
+        <thead><tr><th>Estratégia</th><th>Green</th><th>Red</th><th>Taxa</th></tr></thead>
+        <tbody></tbody>
+    </table></div>
+
+    <h2>⚽ Jogos de hoje</h2>
+    <div class="card"><table id="t-jogos">
+        <thead><tr><th>Jogo</th><th>Liga</th><th>Hora/Status</th><th>Odds (1x2)</th><th>Over 2.5</th><th>Sinais</th></tr></thead>
+        <tbody></tbody>
+    </table></div>
+
+    <h2>🚨 Últimos sinais</h2>
+    <div class="card"><table id="t-sinais">
+        <thead><tr><th>Status</th><th>Jogo</th><th>Estratégia</th><th>Min</th><th>Placar sinal → final</th><th>Ação</th></tr></thead>
+        <tbody></tbody>
+    </table></div>
+
+    <button id="refresh" onclick="load()">↻ Atualizar</button>
+
+<script>
+async function load() {
+    const r = await fetch('/api/overview');
+    const d = await r.json();
+
+    document.getElementById('atualizado').textContent =
+        'atualizado em ' + new Date(d.atualizado_em).toLocaleTimeString('pt-BR');
+
+    // KPIs
+    document.getElementById('s-total').textContent = d.stats.geral.total_sinais;
+    document.getElementById('s-green').textContent = d.stats.geral.green;
+    document.getElementById('s-red').textContent = d.stats.geral.red;
+    document.getElementById('s-pend').textContent = d.stats.geral.pendentes;
+    document.getElementById('s-taxa').textContent = d.stats.geral.taxa_geral + '%';
+
+    // Estratégias
+    const be = document.querySelector('#t-estr tbody');
+    be.innerHTML = d.stats.por_estrategia.map(e =>
+        `<tr><td>${e.nome}${e.desativada ? '<span class="tag off">DESLIGADA</span>' : ''}</td>` +
+        `<td class="green">${e.green}</td><td class="red">${e.red}</td>` +
+        `<td><b>${e.taxa}%</b></td></tr>`
+    ).join('') || '<tr><td colspan="4">sem dados ainda</td></tr>';
+
+    // Jogos
+    const bj = document.querySelector('#t-jogos tbody');
+    bj.innerHTML = d.jogos.jogos.map(j => {
+        const st = j.status === 'NS'
+            ? (j.hora || '').slice(0, 5)
+            : `<b class="amber">${j.placar}</b> (${j.status})`;
+        return `<tr><td><b>${j.casa}</b> x <b>${j.fora}</b></td><td>${j.liga}</td><td>${st}</td>` +
+            `<td>${j.odd_casa_pre ? j.odd_casa_pre + ' / ' + j.odd_fora_pre : '—'}</td>` +
+            `<td>${j.odd_over25_pre || '—'}</td><td>${j.sinais}</td></tr>`;
+    }).join('') || '<tr><td colspan="6">nenhum jogo mapeado</td></tr>';
+
+    // Sinais
+    const bs = document.querySelector('#t-sinais tbody');
+    bs.innerHTML = d.sinais.lista.slice(0, 30).map(s => {
+        const cls = s.status === 'GREEN' ? 'G' : s.status === 'RED' ? 'R' : 'P';
+        const lbl = s.status === 'GREEN' ? 'GREEN' : s.status === 'RED' ? 'RED' : 'PEND';
+        return `<tr><td><span class="tag ${cls}">${lbl}</span></td>` +
+            `<td>${s.casa} x ${s.fora}</td><td>${s.estrategia}</td>` +
+            `<td>${s.minuto}'</td><td>${s.placar_no_sinal || '—'} → ${s.placar_final || '?'}</td>` +
+            `<td>${s.acao || ''}</td></tr>`;
+    }).join('') || '<tr><td colspan="6">nenhum sinal ainda</td></tr>';
+}
+load();
+setInterval(load, 60000); // auto-refresh 60s
+</script>
+</body>
+</html>

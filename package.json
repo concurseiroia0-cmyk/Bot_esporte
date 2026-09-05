@@ -1,0 +1,20 @@
+{
+  "name": "bot-farejador",
+  "version": "1.0.0",
+  "description": "Bot farejador de pressão - 3 robôs para análise de apostas em futebol",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "map": "node -e \"require('./robos/mapeamento').mapeamento()\"",
+    "scan": "node -e \"require('./robos/scanner').scanner()\"",
+    "validate": "node -e \"require('./robos/validacao').validacao()\"",
+    "dashboard": "node dashboard/server.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "node-cron": "^3.0.0",
+    "node-telegram-bot-api": "^0.66.0",
+    "dotenv": "^16.4.0",
+    "lowdb": "^3.0.0"
+  }
+}
