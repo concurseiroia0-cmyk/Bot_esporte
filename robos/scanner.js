@@ -58,7 +58,9 @@ const ESTRATEGIAS = [
             const oddPre = c.favorito === 'casa' ? c.jogo.odd_casa_pre : c.jogo.odd_fora_pre;
             const oddLive = c.favorito === 'casa' ? (c.oddsLive && c.oddsLive.home) : (c.oddsLive && c.oddsLive.away);
             if (oddPre === null || oddPre === undefined || oddPre >= 1.70) return false;
-            if (!oddLive || oddLive < 2.00) return false;
+            // Odd ao vivo: se disponível, exige >= 2.00. Sem odd ao vivo (API free),
+            // segue com a odd pré como referência (o favorito dominando 0-0 já indica o trade).
+            if (oddLive && oddLive < 2.00) return false;
             if (c.fav.posse <= 60) return false;
             if (c.fav.chutes_gol < 4) return false;
             if (c.fav.ataques_perigosos < 25) return false;
@@ -68,7 +70,9 @@ const ESTRATEGIAS = [
             const lado = c.favorito === 'casa' ? 'CASA' : 'FORA';
             const oddLive = c.favorito === 'casa'
                 ? (c.oddsLive && c.oddsLive.home) : (c.oddsLive && c.oddsLive.away);
-            return `BACK FAVORITO (${lado}) - ODD ATUAL: ${oddLive ? oddLive.toFixed(2) : '??'}`;
+            const oddPre = c.favorito === 'casa' ? c.jogo.odd_casa_pre : c.jogo.odd_fora_pre;
+            const ref = oddLive ? oddLive.toFixed(2) : (oddPre ? '~' + oddPre.toFixed(2) : '??');
+            return `BACK FAVORITO (${lado}) - ODD ATUAL: ${ref}`;
         }
     },
     {

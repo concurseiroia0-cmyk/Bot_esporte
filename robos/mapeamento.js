@@ -11,6 +11,7 @@
 const fs = require('fs');
 const path = require('path');
 const { apiGet, readJson, writeJson, alerta, resetKeys } = require('../lib/common');
+const { buscarOddsTheOdds } = require('../lib/odds');
 
 const DATA_FILE = path.join(__dirname, '..', 'data', 'jogos-hoje.json');
 
@@ -78,7 +79,22 @@ async function mapeamento() {
                 console.error(`   Odds liga ${ligaId}: ${e.message}`);
             }
         }
-        console.log(`💰 Odds obtidas em lote: ${Object.keys(oddsPorFixture).length} jogos (${reqsOdds} requisições).`);
+        console.log(`💰 Odds api-football: ${Object.keys(oddsPorFixture).length} jogos (${reqsOdds} req).`);
+
+        // 2b — complementa com a the-odds-api (grátis, destrava E1/E6)
+        try {
+            const oddsTheOdds = await buscarOddsTheOdds(fixtures);
+            let novos = 0;
+            for (const fx of fixtures) {
+                if (!oddsPorFixture[fx.fixture.id] && oddsTheOdds[fx.fixture.id]) {
+                    oddsPorFixture[fx.fixture.id] = oddsTheOdds[fx.fixture.id];
+                    novos++;
+                }
+            }
+            if (novos) console.log(`💰 +${novos} jogos com odds via the-odds-api.`);
+        } catch (e) {
+            console.error('   Erro the-odds-api:', e.message);
+        }
 
         // 3 — montar lista de jogos
         const jogosFiltrados = [];
