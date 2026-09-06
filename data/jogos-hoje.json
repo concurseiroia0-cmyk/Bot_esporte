@@ -22,7 +22,7 @@
       "favorito_pre": "casa",
       "tem_odds": true,
       "qualificado": true,
-      "status": "1H",
+      "status": "HT",
       "placar": "0-0",
       "sinais_enviados": []
     },
@@ -68,7 +68,7 @@
       "favorito_pre": "casa",
       "tem_odds": true,
       "qualificado": true,
-      "status": "1H",
+      "status": "HT",
       "placar": "1-2",
       "sinais_enviados": []
     },
@@ -92,7 +92,7 @@
       "tem_odds": true,
       "qualificado": true,
       "status": "1H",
-      "placar": "0-1",
+      "placar": "0-2",
       "sinais_enviados": []
     },
     {
@@ -138,7 +138,7 @@
       "tem_odds": true,
       "qualificado": true,
       "status": "1H",
-      "placar": "0-0",
+      "placar": "1-0",
       "sinais_enviados": []
     },
     {
@@ -183,8 +183,8 @@
       "favorito_pre": "empate",
       "tem_odds": false,
       "qualificado": true,
-      "status": "NS",
-      "placar": "0-0",
+      "status": "1H",
+      "placar": "0-1",
       "sinais_enviados": []
     },
     {
