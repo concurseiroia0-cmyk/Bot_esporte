@@ -21,6 +21,7 @@ const {
     apiGet, readJson, writeJson, sendTelegram, alerta,
     parseMinuto, extractStats, sleep
 } = require('../lib/common');
+const { buscarJogosAoVivoESPN, casarJogoESPN, buscarStatsESPN, SLUGS: SLUGS_ESPN } = require('../lib/espn');
 
 const JOGOS_FILE = 'jogos-hoje.json';
 const SINAIS_FILE = 'sinais-hoje.json';
@@ -223,17 +224,51 @@ async function scanner() {
             return;
         }
 
-        // 2 — 1 única requisição: todos os jogos ao vivo
-        const live = await apiGet('fixtures', { live: 'all' });
-        const liveMap = {};
-        for (const fx of live.response || []) {
-            liveMap[fx.fixture.id] = fx;
+        // 2 — 1 única requisição: todos os jogos ao vivo (api-football)
+        //     Se a cota acabar, troca para a ESPN (sem cota) e continua.
+        let liveMap = {};
+        let vivosESPN = [];
+        let fonteViva = 'api-football';
+        try {
+            const live = await apiGet('fixtures', { live: 'all' });
+            for (const fx of live.response || []) {
+                liveMap[fx.fixture.id] = fx;
+            }
+        } catch (e) {
+            if (e.allKeysExhausted) {
+                console.log('⚠️  Cota api-football esgotada — trocando para ESPN (sem cota).');
+                fonteViva = 'espn';
+                vivosESPN = await buscarJogosAoVivoESPN();
+                const aviso = readJson('aviso-espn.json', { data: '' });
+                const hoje = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date());
+                if (aviso.data !== hoje) {
+                    writeJson('aviso-espn.json', { data: hoje });
+                    await alerta('⚠️ <b>Cota api-football esgotada.</b> O scanner continuou usando a ESPN como fonte reserva (posse, chutes, escanteios, faltas, cartões).');
+                }
+            } else {
+                throw e;
+            }
         }
 
         // 3 — Iterar jogos mapeados
         let sinaisNovos = 0;
         for (const jogo of payload.jogos) {
-            const fx = liveMap[jogo.api_id];
+            let fx = liveMap[jogo.api_id];
+            let fonteJogo = 'api-football';
+
+            if (!fx && fonteViva === 'espn') {
+                const m = casarJogoESPN(jogo, vivosESPN);
+                if (m) {
+                    fx = {
+                        fixture: { status: { short: '2H', elapsed: m.minuto } },
+                        goals: { home: m.placarCasa, away: m.placarFora },
+                        _espnEventoId: m.eventoId,
+                        _espnSlug: SLUGS_ESPN[m.ligaId]
+                    };
+                    fonteJogo = 'espn';
+                }
+            }
+
             if (!fx) continue; // não está ao vivo
 
             const st = fx.fixture.status.short;
@@ -271,10 +306,14 @@ async function scanner() {
             // 6 — Buscar estatísticas (1 req por jogo na janela)
             let stats = null;
             try {
-                const statsData = await apiGet('fixtures/statistics', { fixture: jogo.api_id });
-                stats = extractStats(statsData.response);
+                if (fonteJogo === 'espn') {
+                    stats = await buscarStatsESPN(fx._espnEventoId, fx._espnSlug);
+                } else {
+                    const statsData = await apiGet('fixtures/statistics', { fixture: jogo.api_id });
+                    stats = extractStats(statsData.response);
+                }
             } catch (e) {
-                if (e.allKeysExhausted) throw e;
+                if (e.allKeysExhausted && fonteJogo !== 'espn') throw e;
                 console.error(`   Stats ${jogo.casa}x${jogo.fora}: ${e.message}`);
             }
             if (!stats) continue; // sem stats → pula jogo (qualidade de dados)
@@ -293,7 +332,7 @@ async function scanner() {
                     const parsed = parseOddsLive(oddsData.response);
                     oddsLive = parsed;
                 } catch (e) {
-                    if (e.allKeysExhausted) throw e;
+                    if (e.allKeysExhausted && fonteJogo !== 'espn') throw e;
                     oddsLive = null;
                 }
             }
