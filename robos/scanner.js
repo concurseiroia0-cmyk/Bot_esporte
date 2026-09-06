@@ -238,7 +238,6 @@ async function scanner() {
             if (e.allKeysExhausted) {
                 console.log('⚠️  Cota api-football esgotada — trocando para ESPN (sem cota).');
                 fonteViva = 'espn';
-                vivosESPN = await buscarJogosAoVivoESPN();
                 const aviso = readJson('aviso-espn.json', { data: '' });
                 const hoje = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date());
                 if (aviso.data !== hoje) {
@@ -248,6 +247,17 @@ async function scanner() {
             } else {
                 throw e;
             }
+        }
+
+        // 2b — ESPN sempre consultada (sem cota): cobre jogos que a api-football
+        //     não listou como ao vivo (cobertura parcial do plano free).
+        try {
+            vivosESPN = await buscarJogosAoVivoESPN();
+            if (fonteViva === 'api-football' && vivosESPN.length) {
+                console.log(`   📡 ESPN como cobertura extra: ${vivosESPN.length} jogos ao vivo.`);
+            }
+        } catch (e) {
+            console.error('   📡 ESPN falhou:', e.message);
         }
 
         // 3 — Iterar jogos mapeados
