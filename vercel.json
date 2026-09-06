@@ -1,7 +1,6 @@
 {
-    "version": 2,
-    "functions": {
-        "api/**/*.js": { "runtime": "@vercel/node@3" }
-    },
-    "cleanUrls": true
+  "version": 2,
+  "cleanUrls": true,
+  "buildCommand": "npm install",
+  "outputDirectory": "."
 }

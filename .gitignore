@@ -2,10 +2,14 @@ node_modules/
 .env
 logs/
 
-# Dados: jogos-hoje.json e historico.json SÃO commitados (o site na Vercel lê do repo).
-# rate-limit e api-keys são locais/transientes.
-data/*
-!data/jogos-hoje.json
-!data/historico.json
-!data/sinais-hoje.json
-!data/estrategias-estado.json
+# Dados: rastreáveis pelo git, lidos pelo Vercel
+data/jogos-hoje.json
+data/historico.json
+data/sinais-hoje.json
+data/estrategias-estado.json
+
+# Arquivos transientes (não rastreáveis)
+data/api-keys.json
+data/rate-limit.json
+
+.vercel
