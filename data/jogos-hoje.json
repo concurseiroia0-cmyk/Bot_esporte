@@ -69,7 +69,7 @@
       "tem_odds": true,
       "qualificado": true,
       "status": "1H",
-      "placar": "1-1",
+      "placar": "1-2",
       "sinais_enviados": []
     },
     {
@@ -92,7 +92,7 @@
       "tem_odds": true,
       "qualificado": true,
       "status": "1H",
-      "placar": "0-0",
+      "placar": "0-1",
       "sinais_enviados": []
     },
     {
@@ -114,7 +114,7 @@
       "favorito_pre": "fora",
       "tem_odds": true,
       "qualificado": true,
-      "status": "NS",
+      "status": "1H",
       "placar": "0-0",
       "sinais_enviados": []
     },
