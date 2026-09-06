@@ -3,10 +3,11 @@ node_modules/
 logs/
 
 # Dados: rastreáveis pelo git, lidos pelo Vercel
-data/jogos-hoje.json
-data/historico.json
-data/sinais-hoje.json
-data/estrategias-estado.json
+data/*
+!data/jogos-hoje.json
+!data/historico.json
+!data/sinais-hoje.json
+!data/estrategias-estado.json
 
 # Arquivos transientes (não rastreáveis)
 data/api-keys.json
